@@ -1,4 +1,4 @@
-# toolz 🦀 🛠  🔐 ⚡️ ✨
+# rustic-toolz 🦀 🛠  🔐 ⚡️ ✨
 
 [![CI](https://github.com/gabrielfalcao/rustic-toolz/actions/workflows/rust.yml/badge.svg)](https://github.com/gabrielfalcao/rustic-toolz/actions/workflows/rust.yml)
 
