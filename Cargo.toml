@@ -1,0 +1,42 @@
+[package]
+name = "toolz"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "2.33", features = ["wrap_help"] }
+regex = "1.5.4"
+glob = "0.3.0"
+slug = "0.1.4"
+tokio = { version = "1", features = ["full"] }
+indicatif = "0.17.0-beta.1"
+unwrap = "1.2.1"
+console = "0.15.0"
+rust-crypto = "0.2.36"
+rand = "0.8.4"
+rustc-serialize = "0.3.24"
+base64 = "0.13.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.8"
+rpassword = "5.0.1"
+shellexpand = "2.1.0"
+[dev-dependencies]
+speculate = "0.1"
+k9 = "0.11.1"
+
+[lib]
+name = "toolz"
+path = "src/lib.rs"
+
+[[bin]]
+name = "slugify-filenames"
+path = "src/slugify-filenames.rs"
+bench = false
+
+[[bin]]
+name = "aes-256-cbc"
+path = "src/aes256.rs"
+bench = false

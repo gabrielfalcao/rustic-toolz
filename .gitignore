@@ -1,0 +1,5 @@
+/target
+/tmp
+/cyphertext*.yaml
+/*key*.yaml
+/*.aes
