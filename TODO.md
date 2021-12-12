@@ -1,3 +1,4 @@
 # aes-256-cbc
 
-- [ ] Use open file instead of BufWriter
+- [ ] "unit" tests
+- [ ] use open file instead of BufWriter
