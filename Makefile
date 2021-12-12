@@ -1,6 +1,9 @@
 AES256_DEBUG_BIN		:=target/debug/aes-256-cbc
 AES256_RELEASE_BIN		:=target/release/aes-256-cbc
 AES256_BIN			:=$(AES256_DEBUG_BIN)
+BIP39_DEBUG_BIN			:=target/debug/bip39
+BIP39_RELEASE_BIN		:=target/release/bip39
+BIP39_BIN			:=$(BIP39_DEBUG_BIN)
 SLUGIFY_FILENAMES_DEBUG_BIN	:=target/debug/slugify-filenames
 SLUGIFY_FILENAMES_RELEASE_BIN	:=target/release/slugify-filenames
 SLUGIFY_FILENAMES_BIN		:=$(SLUGIFY_FILENAMES_DEBUG_BIN)
@@ -19,6 +22,7 @@ release:
 	cargo build --release
 	cp target/release/slugify-filenames ~/usr/bin/
 	cp target/release/aes-256-cbc ~/usr/bin/
+	cp target/release/bip39 ~/usr/bin/
 
 fmt:
 	rustfmt --edition 2021 src/*.rs

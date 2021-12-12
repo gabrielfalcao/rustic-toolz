@@ -63,6 +63,9 @@ fn load_key(matches: &ArgMatches, config: &Config) -> Key {
 
 fn generate_command(matches: &ArgMatches, config: &Config) {
     let ask_password = matches.is_present("ask_password");
+    // test
+    // C-x C-s to save, just like in emacs
+    
     let password = if ask_password {
         match confirm_password() {
             Some(password) => password,
