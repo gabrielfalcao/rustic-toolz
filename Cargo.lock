@@ -462,6 +462,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 
 [[package]]
+name = "rustic-toolz"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "clap",
+ "console",
+ "glob",
+ "indicatif",
+ "k9",
+ "rand 0.8.4",
+ "regex",
+ "rpassword",
+ "rust-crypto",
+ "serde",
+ "serde_yaml",
+ "shellexpand",
+ "slug",
+ "speculate",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.131"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -589,27 +610,6 @@ checksum = "ca8a50ef2360fbd1eeb0ecd46795a87a19024eb4b53c5dc916ca1fd95fe62438"
 dependencies = [
  "libc",
  "winapi",
-]
-
-[[package]]
-name = "toolz"
-version = "0.1.0"
-dependencies = [
- "base64",
- "clap",
- "console",
- "glob",
- "indicatif",
- "k9",
- "rand 0.8.4",
- "regex",
- "rpassword",
- "rust-crypto",
- "serde",
- "serde_yaml",
- "shellexpand",
- "slug",
- "speculate",
 ]
 
 [[package]]
