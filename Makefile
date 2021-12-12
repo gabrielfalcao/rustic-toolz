@@ -14,7 +14,6 @@ clean:
 
 cls:
 	@echo -e "\033[H\033[2J"
-	-@git co HEAD -- Cargo.toml
 
 release:
 	cargo build --release
