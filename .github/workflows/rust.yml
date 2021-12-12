@@ -29,6 +29,17 @@ jobs:
       - name: e2e tests
         run: make test
 
+  load_test:
+    name: Load Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: load tests
+        run: make load
+
 
   build_release:
     name: Build Release
