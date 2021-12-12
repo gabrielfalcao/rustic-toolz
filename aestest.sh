@@ -2,7 +2,7 @@
 
 password='I X@X@ Nickelback <3'
 plaintext="Hello World"
-bin="./target/debug/aes256"
+bin="./target/release/aes256"
 #auth=--key-filename "${key_filename}"
 #auth=--password "${password}"
 
