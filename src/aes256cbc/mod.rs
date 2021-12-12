@@ -49,7 +49,7 @@ use std::io::{BufReader, Read, Write};
 const ALGO: &'static str = "aes-256-cbc";
 
 ///The path used by `Config::default()`
-const DEFAULT_CONFIG_PATH: &'static str = "~/.toolz.yaml";
+const DEFAULT_CONFIG_PATH: &'static str = "~/.rustic-toolz.yaml";
 
 ///The builtin number of cycles for a key derivation
 const KEY_CYCLES: u32 = 1000;
@@ -152,6 +152,7 @@ impl CyclesConfig {
 #[derive(PartialEq, Serialize, Deserialize)]
 pub struct Config {
     pub cycles: CyclesConfig,
+    pub default_key_path: Option<String>,
 }
 
 impl Config {
@@ -164,11 +165,13 @@ impl Config {
     pub fn from_vec(vec: &[u32; 3]) -> Config {
         Config {
             cycles: CyclesConfig::from_vec(vec),
+            default_key_path: None,
         }
     }
     /// Creates a new builtin config
-    pub fn builtin() -> Config {
+    pub fn builtin(default_key_path: Option<String>) -> Config {
         Config {
+            default_key_path,
             cycles: CyclesConfig {
                 key: KEY_CYCLES,
                 salt: SALT_CYCLES,
@@ -197,7 +200,7 @@ impl Config {
     pub fn import(filename: &str) -> Option<Config> {
         match fs::read_to_string(filename) {
             Ok(yaml) => Some(Config::from_yaml(yaml)),
-            Err(_) => Some(Config::builtin()),
+            Err(_) => Some(Config::builtin(None)),
         }
     }
     pub fn iv_cycles(&self) -> u32 {
