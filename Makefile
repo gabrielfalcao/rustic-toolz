@@ -67,9 +67,9 @@ aes-256-key: cls build
 	@echo $$(seq 10 | sed 's/[0-9]*/-/g' | tr '\n' '-')
 	@echo "$@"
 	@echo $$(seq 10 | sed 's/[0-9]*/-/g' | tr '\n' '-')
-	$(AES256_BIN) generate --key-filename Makefile.key.yaml --password $(PASSWORD)
-	$(AES256_BIN) encrypt --key-filename Makefile.key.yaml --output-filename Cargo.toml.aes --input-filename Cargo.toml
-	$(AES256_BIN) decrypt --key-filename Makefile.key.yaml --input-filename Cargo.toml.aes --output-filename Cargo.toml
+	$(AES256_BIN) generate --key-filename ~/aes-256-cbc.yaml --password $(PASSWORD)
+	$(AES256_BIN) encrypt --key-filename ~/aes-256-cbc.yaml --output-filename Cargo.toml.aes --input-filename Cargo.toml
+	$(AES256_BIN) decrypt --key-filename ~/aes-256-cbc.yaml --input-filename Cargo.toml.aes --output-filename Cargo.toml
 	cargo check
 
 aes-256-password: cls build
