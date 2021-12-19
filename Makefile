@@ -4,6 +4,9 @@ AES256_BIN			:=$(AES256_DEBUG_BIN)
 BIP39_DEBUG_BIN			:=target/debug/bip39
 BIP39_RELEASE_BIN		:=target/release/bip39
 BIP39_BIN			:=$(BIP39_DEBUG_BIN)
+IPLEAK_DEBUG_BIN		:=target/debug/ipleak
+IPLEAK_RELEASE_BIN		:=target/release/ipleak
+IPLEAK_BIN			:=$(IPLEAK_DEBUG_BIN)
 SLUGIFY_FILENAMES_DEBUG_BIN	:=target/debug/slugify-filenames
 SLUGIFY_FILENAMES_RELEASE_BIN	:=target/release/slugify-filenames
 SLUGIFY_FILENAMES_BIN		:=$(SLUGIFY_FILENAMES_DEBUG_BIN)
@@ -23,6 +26,7 @@ release:
 	cp target/release/slugify-filenames ~/usr/bin/
 	cp target/release/aes-256-cbc ~/usr/bin/
 	cp target/release/bip39 ~/usr/bin/
+	cp target/release/ipleak ~/usr/bin/
 
 fmt:
 	rustfmt --edition 2021 src/*.rs
@@ -62,8 +66,8 @@ aes-256-ask: cls build
 	@echo $$(seq 10 | sed 's/[0-9]*/-/g' | tr '\n' '-')
 	@echo $(PASSWORD) | pbcopy
 	@echo "\033[38;5;227mPASSWORD COPIED TO CLIPBOARD: \033[38;5;49m"$(PASSWORD)"\033[0m"
-	$(AES256_BIN) encrypt --ask-password --output-filename Cargo.toml.aes --input-filename Cargo.toml
-	$(AES256_BIN) decrypt --ask-password --input-filename Cargo.toml.aes --output-filename Cargo.toml
+	$(AES256_BIN) encrypt --ask-password --output-filename README.md.aes --input-filename README.md
+	$(AES256_BIN) decrypt --ask-password --input-filename README.md.aes --output-filename README.md
 	cargo check
 
 aes-256-key: cls build
@@ -71,19 +75,25 @@ aes-256-key: cls build
 	@echo "$@"
 	@echo $$(seq 10 | sed 's/[0-9]*/-/g' | tr '\n' '-')
 	$(AES256_BIN) generate --key-filename ~/aes-256-cbc.yaml --password $(PASSWORD)
-	$(AES256_BIN) encrypt --key-filename ~/aes-256-cbc.yaml --output-filename Cargo.toml.aes --input-filename Cargo.toml
-	$(AES256_BIN) decrypt --key-filename ~/aes-256-cbc.yaml --input-filename Cargo.toml.aes --output-filename Cargo.toml
+	$(AES256_BIN) encrypt --key-filename ~/aes-256-cbc.yaml --output-filename README.md.aes --input-filename README.md
+	$(AES256_BIN) decrypt --key-filename ~/aes-256-cbc.yaml --input-filename README.md.aes --output-filename README.md
 	cargo check
 
 aes-256-password: cls build
 	@echo $$(seq 10 | sed 's/[0-9]*/-/g' | tr '\n' '-')
 	@echo "$@"
 	@echo $$(seq 10 | sed 's/[0-9]*/-/g' | tr '\n' '-')
-	$(AES256_BIN) encrypt --password $(PASSWORD) --output-filename Cargo.toml.aes --input-filename Cargo.toml
-	$(AES256_BIN) decrypt --password $(PASSWORD) --input-filename Cargo.toml.aes --output-filename Cargo.toml
+	$(AES256_BIN) encrypt --password $(PASSWORD) --output-filename README.md.aes --input-filename README.md
+	$(AES256_BIN) decrypt --password $(PASSWORD) --input-filename README.md.aes --output-filename README.md
 	cargo check
 
 aes-256: aes-256-key aes-256-password aes-256-ask
+
+bip39: build
+	$(BIP39_BIN)
+
+ipleak: build
+	$(IPLEAK_BIN)
 
 load: clean build
 	./aestest.sh
@@ -97,4 +107,4 @@ $(AES256_DEBUG_BIN):
 
 
 
-.PHONY: all release fmt tmp test dry-run coverage aes256 build clean test-e2e test-aes-256 test-slugify-filenames
+.PHONY: all release fmt tmp test dry-run coverage aes256 build clean test-e2e test-aes-256 test-slugify-filenames bip39 ipleak
