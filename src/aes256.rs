@@ -3,8 +3,9 @@ use console::style;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
 use toolz::aes256cbc::b64encode;
-use toolz::aes256cbc::Key;
+use toolz::aes256cbc::hmac_256_digest;
 use toolz::aes256cbc::Config;
+use toolz::aes256cbc::Key;
 use toolz::core;
 
 pub fn read_bytes(filename: &str) -> Vec<u8> {
@@ -65,7 +66,7 @@ fn generate_command(matches: &ArgMatches, config: &Config) {
     let ask_password = matches.is_present("ask_password");
     // test
     // C-x C-s to save, just like in emacs
-    
+
     let password = if ask_password {
         match confirm_password() {
             Some(password) => password,
@@ -90,6 +91,15 @@ fn encrypt_command(matches: &ArgMatches, config: &Config) {
     let cyphertext_filename = matches.value_of("cyphertext_filename").unwrap();
     let plaintext_string = matches.value_of("string").unwrap_or("");
     let plaintext_filename = matches.value_of("plaintext_filename").unwrap_or("");
+
+    if key.owns_file(plaintext_filename) {
+        eprintln!(
+            "{}{}",
+            style("skipping file already encrypted: ").color256(162),
+            style(plaintext_filename).color256(136)
+        );
+        return;
+    }
 
     let plaintext = if plaintext_filename.len() > 0 {
         read_bytes(plaintext_filename)
@@ -123,6 +133,16 @@ fn decrypt_command(matches: &ArgMatches, config: &Config) {
 
     let cyphertext_filename = matches.value_of("cyphertext_filename").unwrap();
     let plaintext_filename = matches.value_of("plaintext_filename").unwrap_or("");
+
+    if key.owns_file(cyphertext_filename) {
+        eprintln!(
+            "{}{}",
+            style("skipping file not owned by the given key: ").color256(203),
+            style(cyphertext_filename).color256(208)
+        );
+        return;
+    }
+
     let cyphertext = read_bytes(cyphertext_filename);
 
     match key.decrypt(&cyphertext).ok() {

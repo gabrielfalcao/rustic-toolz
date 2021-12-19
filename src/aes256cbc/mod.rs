@@ -47,7 +47,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Write};
 
 const ALGO: &'static str = "aes-256-cbc";
-
+const MAC_SIZE: usize = 32;
 ///The path used by `Config::default()`
 const DEFAULT_CONFIG_PATH: &'static str = "~/.rustic-toolz.yaml";
 
@@ -79,7 +79,9 @@ pub fn hmac_256_digest(mac_key: &[u8], iv: &[u8]) -> Vec<u8> {
     mac.input(&iv);
     let result = mac.result();
     let mac_digest = result.code();
-    mac_digest.to_vec()
+    let vec = mac_digest.to_vec();
+    println!("{}", vec.len());
+    vec
 }
 
 /// Encodes &[u8] to a base64 string
@@ -279,6 +281,25 @@ impl Key {
             magic: None,
         }
     }
+    /// Checks if a file is encrypted with this key
+    pub fn owns_file(&self, filename: &str) -> bool {
+        let mut fd =
+            File::open(filename).expect(format!("failed to open file {}", filename).as_str());
+        let mut buffer = [0; MAC_SIZE];
+        fd.read(&mut buffer)
+            .expect(format!("failed to read the first bytes of {}", filename).as_str());
+
+        let mac = self.mac_bytes();
+        let iv = self.iv_bytes();
+        let digest = hmac_256_digest(&mac, &iv);
+
+        if buffer[..] == digest {
+            true
+        } else {
+            println!("{} {}", b64encode(&buffer), b64encode(&digest));
+            false
+        }
+    }
     /// Load key from a YAML file
     pub fn import(filename: &str) -> Key {
         let yaml = fs::read_to_string(filename).expect("cannot read key file");
@@ -311,13 +332,13 @@ impl Key {
         String::from(filename)
     }
 
-    /// Encrypt a buffer with the given key and iv using
+    /// Encrypt a buffer with the key
     /// AES-256/CBC/Pkcs encryption.
     pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
         // Create an encryptor instance of the best performing
         // type available for the platform.
         let enc_key = self.key_bytes();
-        //let mac_key = self.mac_bytes();
+        let mac_key = self.mac_bytes();
         let iv = self.iv_bytes();
         let mut encryptor = aes::cbc_encryptor(
             aes::KeySize::KeySize256,
@@ -335,6 +356,10 @@ impl Key {
         let mut read_buffer = buffer::RefReadBuffer::new(data);
         let mut buffer = [0; BUF_SIZE];
         let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
+
+        // The first 32 bytes of the cyphertext are the digest of mac and iv
+        let digest = hmac_256_digest(&mac_key, &iv);
+        cyphertext.extend_from_slice(&digest);
 
         // Each encryption operation will "make progress". "Making progress"
         // is a bit loosely defined, but basically, at the end of each operation
@@ -379,13 +404,8 @@ impl Key {
         Ok(cyphertext)
     }
 
-    /// Decrypts a buffer with the given key and iv using
-    /// AES-256/CBC/Pkcs encryption.
-    ///
-    /// This function is very similar to encrypt(), so, please reference
-    /// comments in that function. In non-example code, if desired, it is possible to
-    /// share much of the implementation using closures to hide the operation
-    /// being performed. However, such code would make this example less clear.
+    /// Decrypts a buffer with the key
+    /// AES-256/CBC/Pkcs decryption.
     pub fn decrypt(
         &self,
         cyphertext: &[u8],
@@ -399,6 +419,11 @@ impl Key {
 
         let mut plaintext = Vec::<u8>::new();
         let mut read_buffer = buffer::RefReadBuffer::new(&cyphertext);
+        let mac_bytes = read_buffer.take_next(MAC_SIZE);
+        if mac_bytes != self.mac_bytes() {
+            eprintln!("Cannot decrypt: file was not encrypted by this key");
+            return Ok((*cyphertext).to_vec());
+        }
         let mut buffer = [0; BUF_SIZE];
         let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
 
