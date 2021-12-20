@@ -47,7 +47,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Write};
 
 const ALGO: &'static str = "aes-256-cbc";
-const MAC_SIZE: usize = 32;
+const DIGEST_SIZE: usize = 32;
 ///The path used by `Config::default()`
 const DEFAULT_CONFIG_PATH: &'static str = "~/.rustic-toolz.yaml";
 
@@ -72,16 +72,21 @@ pub fn read_bytes(filename: &str) -> Vec<u8> {
         .expect("failed to read file");
     buffer
 }
-
+pub fn bytes_match(a: &[u8], b: &[u8]) -> bool {
+    let diff = a
+        .iter()
+        .zip(b.iter())
+        .map(|(a, b)| a ^ b)
+        .fold(0, |acc, x| acc | x);
+    diff == 0 && a.len() == b.len()
+}
 /// Dummy example of hmac_256_digest
-pub fn hmac_256_digest(mac_key: &[u8], iv: &[u8]) -> Vec<u8> {
+pub fn hmac_256_digest(mac_key: &[u8], iv: &[u8]) -> [u8; DIGEST_SIZE] {
     let mut mac = Hmac::new(Sha256::new(), &mac_key);
     mac.input(&iv);
     let result = mac.result();
     let mac_digest = result.code();
-    let vec = mac_digest.to_vec();
-    println!("{}", vec.len());
-    vec
+    mac_digest[..DIGEST_SIZE].try_into().unwrap()
 }
 
 /// Encodes &[u8] to a base64 string
@@ -285,25 +290,26 @@ impl Key {
     pub fn owns_file(&self, filename: &str) -> bool {
         let mut fd =
             File::open(filename).expect(format!("failed to open file {}", filename).as_str());
-        let mut buffer = [0; MAC_SIZE];
+        let mut buffer = [0; DIGEST_SIZE];
         fd.read(&mut buffer)
             .expect(format!("failed to read the first bytes of {}", filename).as_str());
 
-        let mac = self.mac_bytes();
-        let iv = self.iv_bytes();
-        let digest = hmac_256_digest(&mac, &iv);
-
-        if buffer[..] == digest {
-            true
-        } else {
-            println!("{} {}", b64encode(&buffer), b64encode(&digest));
-            false
-        }
+        self.check_digest(&buffer)
+    }
+    /// Checks the digest of the given bytes
+    pub fn check_digest(&self, buffer: &[u8; DIGEST_SIZE]) -> bool {
+        let digest = self.digest();
+        bytes_match(buffer, &digest)
     }
     /// Load key from a YAML file
     pub fn import(filename: &str) -> Key {
         let yaml = fs::read_to_string(filename).expect("cannot read key file");
         Key::from_yaml(yaml)
+    }
+    pub fn digest(&self) -> [u8; DIGEST_SIZE] {
+        let mac = self.mac_bytes();
+        let iv = self.iv_bytes();
+        hmac_256_digest(&mac, &iv)
     }
     pub fn iv_bytes(&self) -> Vec<u8> {
         b64decode(self.iv.as_bytes())
@@ -338,7 +344,6 @@ impl Key {
         // Create an encryptor instance of the best performing
         // type available for the platform.
         let enc_key = self.key_bytes();
-        let mac_key = self.mac_bytes();
         let iv = self.iv_bytes();
         let mut encryptor = aes::cbc_encryptor(
             aes::KeySize::KeySize256,
@@ -357,8 +362,8 @@ impl Key {
         let mut buffer = [0; BUF_SIZE];
         let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
 
-        // The first 32 bytes of the cyphertext are the digest of mac and iv
-        let digest = hmac_256_digest(&mac_key, &iv);
+        // The first 32 bytes of the cyphertext are the digest
+        let digest = self.digest();
         cyphertext.extend_from_slice(&digest);
 
         // Each encryption operation will "make progress". "Making progress"
@@ -418,12 +423,14 @@ impl Key {
         );
 
         let mut plaintext = Vec::<u8>::new();
-        let mut read_buffer = buffer::RefReadBuffer::new(&cyphertext);
-        let mac_bytes = read_buffer.take_next(MAC_SIZE);
-        if mac_bytes != self.mac_bytes() {
-            eprintln!("Cannot decrypt: file was not encrypted by this key");
+        let hmac_bytes: [u8; DIGEST_SIZE] = cyphertext[..DIGEST_SIZE].try_into().unwrap();
+        if !self.check_digest(&hmac_bytes) {
+            eprintln!("Cannot decrypt: data was not encrypted by this key");
             return Ok((*cyphertext).to_vec());
         }
+
+        let cyphertext = &cyphertext[DIGEST_SIZE..];
+        let mut read_buffer = buffer::RefReadBuffer::new(&cyphertext);
         let mut buffer = [0; BUF_SIZE];
         let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
 
@@ -444,5 +451,24 @@ impl Key {
         }
 
         Ok(plaintext)
+    }
+}
+#[cfg(test)]
+mod tests {
+    use crate::aes256cbc::Config;
+    use crate::aes256cbc::Key;
+    use k9::assert_equal;
+
+    #[test]
+    fn test_encrypt_and_decrypt() {
+        let config = Config::builtin(None);
+        let password = String::from("123456");
+        let key = Key::from_password(&password.as_bytes(), &config);
+
+        let plaintext = b"This is a secret";
+        let cyphertext = key.encrypt(plaintext).unwrap();
+
+        let decrypted = key.decrypt(&cyphertext).unwrap();
+        assert_equal!(decrypted, b"This is a secret");
     }
 }

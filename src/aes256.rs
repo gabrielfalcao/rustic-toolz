@@ -3,7 +3,7 @@ use console::style;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
 use toolz::aes256cbc::b64encode;
-use toolz::aes256cbc::hmac_256_digest;
+
 use toolz::aes256cbc::Config;
 use toolz::aes256cbc::Key;
 use toolz::core;
@@ -98,7 +98,7 @@ fn encrypt_command(matches: &ArgMatches, config: &Config) {
             style("skipping file already encrypted: ").color256(162),
             style(plaintext_filename).color256(136)
         );
-        return;
+        std::process::exit(1);
     }
 
     let plaintext = if plaintext_filename.len() > 0 {
@@ -119,7 +119,7 @@ fn encrypt_command(matches: &ArgMatches, config: &Config) {
     let cyphertext = key.encrypt(&plaintext).ok().expect("encryption failed");
     let mut file = File::create(cyphertext_filename).expect("failed to create new file");
     file.write(&cyphertext).unwrap();
-    eprintln!(
+    println!(
         "{}{}",
         style("wrote encrypted data in: ").color256(207),
         style(cyphertext_filename).color256(205)
@@ -134,7 +134,7 @@ fn decrypt_command(matches: &ArgMatches, config: &Config) {
     let cyphertext_filename = matches.value_of("cyphertext_filename").unwrap();
     let plaintext_filename = matches.value_of("plaintext_filename").unwrap_or("");
 
-    if key.owns_file(cyphertext_filename) {
+    if !key.owns_file(cyphertext_filename) {
         eprintln!(
             "{}{}",
             style("skipping file not owned by the given key: ").color256(203),
@@ -151,7 +151,7 @@ fn decrypt_command(matches: &ArgMatches, config: &Config) {
                 let mut file = File::create(plaintext_filename).expect("failed to create new file");
                 file.write(&decrypted_data)
                     .expect("failed to write to output filename");
-                eprintln!(
+                println!(
                     "{}{}",
                     style("wrote plaintext data in: ").color256(49),
                     style(plaintext_filename).color256(45)
