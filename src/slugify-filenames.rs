@@ -18,6 +18,7 @@ pub struct SlugifyOptions<'a> {
     ignore_hidden: bool,
     silent: bool,
     dry_run: bool,
+    should_lower_the_case: bool,
     targets: Vec<&'a str>,
 }
 
@@ -28,6 +29,8 @@ impl SlugifyOptions<'_> {
         let silent = matches.is_present("silent");
         let dry_run = matches.is_present("dry_run");
         let case_sensitive = !matches.is_present("case_insensitive");
+        let skip_dirs = !matches.is_present("case_insensitive");
+        let should_lower_the_case = !matches.is_present("should_lower_the_case");
         let ignore_hidden = !matches.is_present("include_hidden");
         let targets: Vec<_> = matches.values_of("target").unwrap().collect();
 
@@ -39,6 +42,7 @@ impl SlugifyOptions<'_> {
             targets,
             ignore_hidden,
             case_sensitive,
+            skip_dirs,
         }
     }
     pub fn targets<'a>(&'a self) -> Vec<&'a str> {
@@ -46,6 +50,9 @@ impl SlugifyOptions<'_> {
     }
     pub fn case_sensitive(&self) -> bool {
         self.case_sensitive
+    }
+    pub fn skip_dirs(&self) -> bool {
+        self.skip_dirs
     }
     pub fn silent(&self) -> bool {
         self.silent
@@ -105,6 +112,13 @@ fn main() {
                 .takes_value(false),
         )
         .arg(
+            Arg::with_name("skip_dirs")
+                .help("when in recursive mode, this flag switches on the ability to enter directories for slugifying its contents without slugifying the directory itself.")
+                .long("skip-dirs")
+                .short("D")
+                .takes_value(false),
+        )
+        .arg(
             Arg::with_name("recursive")
                 .help("recurse directories")
                 .long("recursive")
@@ -127,6 +141,12 @@ fn main() {
             Arg::with_name("dry_run")
                 .long("dry-run")
                 .short("n")
+                .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("should_lower_the_case")
+                .long("force-lowercase")
+                .short("l")
                 .takes_value(false),
         )
         .arg(
@@ -180,13 +200,18 @@ fn get_source_info<'a>(path: &'a PathBuf) -> (PathBuf, String, String) {
     (parent.to_path_buf(), source.to_string(), extension)
 }
 
-fn slugify_string<'a>(value: &'a str, repchar: &'a str) -> String {
+fn slugify_string<'a>(value: &'a str, repchar: &'a str, options: &SlugifyOptions) -> String {
     let corners = format!("(^{}+|{}+$)", repchar, repchar);
     let re = Regex::new(r"[^a-zA-Z0-9_-]+").unwrap();
     let value = re.replace_all(value, repchar);
     let re = Regex::new(corners.as_str()).unwrap();
     let value = re.replace_all(value.borrow(), "");
-    value.to_lowercase().to_string()
+
+    if options.dont_lowercase() {
+        value
+    } else {
+        value.to_lowercase().to_string()
+    }
 }
 
 fn slugify_filenames(path: PathBuf, options: &SlugifyOptions) {
@@ -196,6 +221,9 @@ fn slugify_filenames(path: PathBuf, options: &SlugifyOptions) {
         if options.verbose() {
             println!("{}", style(original).color256(237));
         }
+        return;
+    }
+    if options.skip_dirs() && path.is_dir() {
         return;
     }
     if is_blacklisted(original.as_str()) {
@@ -214,7 +242,7 @@ fn slugify_filenames(path: PathBuf, options: &SlugifyOptions) {
         }
         false => String::from(original.as_str()),
     };
-    let slugified = slugify_string(name.as_str(), "-");
+    let slugified = slugify_string(name.as_str(), "-", options);
     let target = match has_extension {
         true => format!("{}.{}", slugified, extension),
         false => slugified,
@@ -282,6 +310,18 @@ mod tests {
     use k9::assert_equal;
     use std::path::Path;
 
+    fn stub_options() {
+        SlugifyOptions {
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+        }
+
+    }
     #[test]
     fn test_slugify_string_basic_scenario() {
         assert_equal!(

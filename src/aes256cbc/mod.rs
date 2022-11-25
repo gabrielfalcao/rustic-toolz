@@ -58,7 +58,7 @@ const SALT_CYCLES: u32 = 1000;
 ///The builtin number of cycles for a ivv derivation
 const IV_CYCLES: u32 = 1000;
 
-const KEY_SIZE: usize = 256;
+const KEY_SIZE: usize = 128;
 const IV_SIZE: usize = 16;
 const BUF_SIZE: usize = 4096;
 
