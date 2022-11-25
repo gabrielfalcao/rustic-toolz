@@ -15,10 +15,11 @@ pub struct SlugifyOptions<'a> {
     verbose: bool,
     recursive: bool,
     case_sensitive: bool,
+    skip_dirs: bool,
+    should_lower_the_case: bool,
     ignore_hidden: bool,
     silent: bool,
     dry_run: bool,
-    should_lower_the_case: bool,
     targets: Vec<&'a str>,
 }
 
@@ -43,6 +44,7 @@ impl SlugifyOptions<'_> {
             ignore_hidden,
             case_sensitive,
             skip_dirs,
+            should_lower_the_case,
         }
     }
     pub fn targets<'a>(&'a self) -> Vec<&'a str> {
@@ -50,6 +52,9 @@ impl SlugifyOptions<'_> {
     }
     pub fn case_sensitive(&self) -> bool {
         self.case_sensitive
+    }
+    pub fn should_lower_the_case(&self) -> bool {
+        self.should_lower_the_case
     }
     pub fn skip_dirs(&self) -> bool {
         self.skip_dirs
@@ -207,8 +212,8 @@ fn slugify_string<'a>(value: &'a str, repchar: &'a str, options: &SlugifyOptions
     let re = Regex::new(corners.as_str()).unwrap();
     let value = re.replace_all(value.borrow(), "");
 
-    if options.dont_lowercase() {
-        value
+    if options.should_lower_the_case() {
+        value.to_string()
     } else {
         value.to_lowercase().to_string()
     }
@@ -312,13 +317,14 @@ mod tests {
 
     fn stub_options() {
         SlugifyOptions {
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
+           r#false,
+           r#false,
+           r#false,
+           r#false,
+           r#false,
+           r#false,
+           r#false,
+           r#false,
         }
 
     }
