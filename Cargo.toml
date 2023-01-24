@@ -1,7 +1,7 @@
 [package]
 name = "rustic-toolz"
 version = "0.1.0"
-edition = "2021"
+edition = "2015"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,6 +19,7 @@ indicatif = "0.17.0-beta.1"
 #unwrap = "1.2.1"
 console = "0.15.0"
 rust-crypto = "0.2.36"
+crypto = "0.4.0"
 rand = "0.8.4"
 #rustc-serialize = "0.3.24"
 base64 = "0.13.0"
