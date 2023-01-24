@@ -332,7 +332,7 @@ mod tests {
     fn test_slugify_string_basic_scenario() {
         assert_equal!(
             "this-is-a-basic-string-123",
-            slugify_string(" This is a basic string: 123 ", "-")
+            slugify_string(" This is a basic string: 123 ", "-"),
         );
     }
     #[test]
